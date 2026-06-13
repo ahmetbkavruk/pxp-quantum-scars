@@ -1,0 +1,153 @@
+% ****** Start of file apssamp.tex ******
+%
+%   This file is part of the APS files in the REVTeX 4.2 distribution.
+%   Version 4.2a of REVTeX, December 2014
+%
+%   Copyright (c) 2014 The American Physical Society.
+%
+%   See the REVTeX 4 README file for restrictions and more information.
+%
+% TeX'ing this file requires that you have AMS-LaTeX 2.0 installed
+% as well as the rest of the prerequisites for REVTeX 4.2
+%
+% See the REVTeX 4 README file
+% It also requires running BibTeX. The commands are as follows:
+%
+%  1)  latex apssamp.tex
+%  2)  bibtex apssamp
+%  3)  latex apssamp.tex
+%  4)  latex apssamp.tex
+%
+\documentclass[%
+ reprint,
+%superscriptaddress,
+%groupedaddress,
+%unsortedaddress,
+%runinaddress,
+%frontmatterverbose, 
+%preprint,
+%preprintnumbers,
+%nofootinbib,
+%nobibnotes,
+%bibnotes,
+ amsmath,amssymb,
+ aps,
+%pra,
+%prb,
+%rmp,
+%prstab,
+%prstper,
+%floatfix,
+]{revtex4-2}
+
+\usepackage{graphicx}% Include figure files
+\usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+\usepackage{hyperref}% add hypertext capabilities
+%\usepackage[mathlines]{lineno}% Enable numbering of text and display math
+%\linenumbers\relax % Commence numbering lines
+
+%\usepackage[showframe,%Uncomment any one of the following lines to test 
+%%scale=0.7, marginratio={1:1, 2:3}, ignoreall,% default settings
+%%text={7in,10in},centering,
+%%margin=1.5in,
+%%total={6.5in,8.75in}, top=1.2in, left=0.9in, includefoot,
+%%height=10in,a5paper,hmargin={3cm,0.8in},
+%]{geometry}
+
+\usepackage{braket}
+\usepackage{cleveref}
+
+\begin{document}
+
+\title{Polynomial Filter Diagonalization and Quantum Many-Body Scars in the PXP Model}% Force line breaks with \\
+
+\author{Ahmet Berk Kavruk}
+\affiliation{University of Bonn}
+
+\date{\today}
+
+\begin{abstract}
+There will be some abstract here...
+\end{abstract}
+
+\maketitle
+
+\noindent
+\textbf{Lecture:} physics767: Computational Methods in Condensed Matter Theory, Prof.~Dr.~David J.~Luitz\\
+\textbf{Tutors:} Kriti Baweja and Dr.~Matías Gonzalez
+
+%\tableofcontents
+
+\section{\label{sec:introduction} Introduction}
+
+Why the topic is relevant and important, current research status etc.
+
+\section{\label{sec:PXPHamiltonian} The PXP Hamiltonian}
+\subsection{The Action of the PXP Hamiltonian}
+To study the Rydberg blockade mechanism, we introduce the PXP Hamiltonian
+\begin{equation}
+H = \sum_{i=0}^{L-1} P_i X_{(i+1)\% L} P_{(i+2)\% L},
+\end{equation}
+where $X_i = \openone \otimes \sigma_x \otimes \openone$ is the Pauli matrix $X = \sigma_x$, acting on site $i$, and the projector $P_i = \frac{1}{2}(\openone - Z_i)$ is described in terms of the identity $\openone$ and the Pauli matrix $Z = \sigma_z$, which acts on site $i$. The Hilbert space $\mathcal{H}$ is defined such that $Z\ket{0} = -\ket{0}$ and $Z\ket{1} = \ket{1}$, such that $P\ket{1} = 0$ and $P\ket{0} = \ket{0}$.
+For a computational basis state
+\[
+\ket{n_0n_1\cdots n_{L-1}},
+\qquad n_i \in \{0,1\},
+\]
+the Hamiltonian acts by checking whether the two neighboring sites $i$ and $i+2$ are both in the state $\ket{0}$. If they are, the operator flips the middle spin at site $i+1$, if they are not, the term gives zero.
+A term in the Hamiltonian can be seen explicitly as,
+\begin{widetext}
+\begin{equation}
+\label{eq:explicitPXP}
+P_i X_{(i+1)\%L} P_{(i+2)\%L}
+\ket{\cdots n_in_{i+1}n_{i+2}\cdots}
+=
+\begin{cases}
+\ket{\cdots 0(n_{i+1}\oplus 1)0\cdots},
+& n_i=0,\ n_{i+2}=0,\\[4pt]
+0,
+& \text{otherwise}.
+\end{cases}
+\end{equation}
+\end{widetext}
+Here, the $\oplus$ in \Cref{eq:explicitPXP} is used to emphasize that the summation is in modulo $2$. 
+
+To see the action explicitly, let us consider the local three-site basis
+\[
+\ket{n_0n_{1}n_{2}},
+\qquad n_i \in \{0,1\}.
+\]
+If we take one of the local Hamiltonian terms $h_0 = P_0 X_{1} P_{2},$ we can see that $h_0$ acts only when both neighboring sites of $n_1$ are in the state $\ket{0}$. Therefore, it maps two of the basis states as
+\begin{equation*}
+    \begin{aligned}
+        h_0\ket{000} &= \ket{010},\\
+        h_0\ket{010} &= \ket{000},\\
+    \end{aligned}
+\end{equation*}
+while the rest of the $h_0\ket{n_0n_1n_2} = 0$. Thus, a spin can only flip if both of its neighboring sites are in the state
+$\ket{0}$. This effectively models the blockade constraint.
+
+\subsection{Blockade Constrained Hilbert Space}
+
+The Rydberg blockade constraint forbids both neighboring atoms to be in the excited state at the same time. This means the states that contain adjacent $\ket{\cdots 11\cdots}$ configurations are not physically relevant. If we look at the adjacency graph of the Hamiltonian, which is constructed by connecting two basis states whenever the corresponding Hamiltonian matrix element $\bra{n_0n_1\cdots}H\ket{n_0'n_1'\cdots}$ is nonzero, we see that the largest connected component is formed by the basis states that satisfy the Rydberg blockade constraint. Therefore, we restrict ourselves to the biggest block of the Hamiltonian for our calculations. 
+Another curious property of the biggest block is its dimension. Assume we have a chain of atoms of size $L$, we have the biggest block dimension
+\begin{equation}
+    \operatorname{dim}\mathcal{H}_\text{biggest}(L)=\mathcal{D}(L), 
+\end{equation}
+and we add one more atom to our basis state. An atom has the states $\ket{0}$ and $\ket{1}$. The state $\ket{0}$ of the new atom can be freely attached to any biggest block basis state in the $L$-atom chain, giving us $\mathcal{D}(L)$ number of valid configurations. When adding the state $\ket{1}$ of the new atom to the $L$-atom chain, the $L$th atom must be in the state $\ket{0}$, and we can again attach this pair $\ket{0}_L\ket{1}_{L+1}$ freely to any biggest block basis state in the remaining $(L-1)$-atom chain, giving us $\mathcal{D}(L-1)$ number of valid configurations. Therefore, the new $(L+1)$-atom chain has the Hilbert space dimension
+\begin{equation}
+    \mathcal{D}(L+1) = \mathcal{D}(L)+\mathcal{D}(L-1),
+\end{equation}
+which implies a Fibonacci sequence, with the initial conditions $\mathcal{D}(1)=2$ and $\mathcal{D}(2) = 3$. This also implies that the biggest block Hilbert space $\mathcal{D}(L)$ of the PXP Hamiltonian grows with the golden ratio 
+\[
+\phi^L = \left(\frac{1+\sqrt{5}}{2}\right)^L \approx (1.618)^L,
+\]
+with growing system sizes, rather than $2^L$.
+\subsection{Translation Invariance}
+The PXP Hamiltonian has translation symmetry, since every site sees the same rule and the chain is periodic. We can use this to create a basis of symmetrized momentum states and block diagonalize the biggest block in momentum sectors with the moment $k$.
+\bibliography{references}% Produces the bibliography via BibTeX.
+
+\end{document}
+%
+% ****** End of file apssamp.tex ******
