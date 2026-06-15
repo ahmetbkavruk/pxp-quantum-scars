@@ -39,7 +39,7 @@
 %prstper,
 %floatfix,
 ]{revtex4-2}
-
+\setcounter{MaxMatrixCols}{20}
 \usepackage{graphicx}% Include figure files
 \usepackage{dcolumn}% Align table columns on decimal point
 \usepackage{bm}% bold math
@@ -130,8 +130,9 @@ $\ket{0}$. This effectively models the blockade constraint.
 
 \subsection{Blockade Constrained Hilbert Space}
 
-The Rydberg blockade constraint forbids both neighboring atoms to be in the excited state at the same time. This means the states that contain adjacent $\ket{\cdots 11\cdots}$ configurations are not physically relevant. If we look at the adjacency graph of the Hamiltonian, which is constructed by connecting two basis states whenever the corresponding Hamiltonian matrix element $\bra{n_0n_1\cdots}H\ket{n_0'n_1'\cdots}$ is nonzero, we see that the largest connected component is formed by the basis states that satisfy the Rydberg blockade constraint. Therefore, we restrict ourselves to the biggest block of the Hamiltonian for our calculations. 
-Another curious property of the biggest block is its dimension. Assume we have a chain of atoms of size $L$, we have the biggest block dimension
+The Rydberg blockade constraint forbids both neighboring atoms to be in the excited state at the same time. This means the states that contain adjacent $\ket{\cdots 11\cdots}$ configurations are not physically relevant. If we look at the adjacency graph of the Hamiltonian, which is constructed by connecting two basis states whenever the corresponding Hamiltonian matrix element $\bra{n_0n_1\cdots}H\ket{n_0'n_1'\cdots}$ is nonzero, we see that the largest connected component is formed by the basis states that satisfy the Rydberg blockade constraint. Therefore, we restrict ourselves to the biggest block of the Hamiltonian for our calculations.
+
+Another curious property of the biggest block is its dimension. Assume we have a chain of atoms of size $L$, then we have the Hilbert space of the biggest block with dimension
 \begin{equation}
     \operatorname{dim}\mathcal{H}_\text{biggest}(L)=\mathcal{D}(L), 
 \end{equation}
@@ -139,13 +140,87 @@ and we add one more atom to our basis state. An atom has the states $\ket{0}$ an
 \begin{equation}
     \mathcal{D}(L+1) = \mathcal{D}(L)+\mathcal{D}(L-1),
 \end{equation}
-which implies a Fibonacci sequence, with the initial conditions $\mathcal{D}(1)=2$ and $\mathcal{D}(2) = 3$. This also implies that the biggest block Hilbert space $\mathcal{D}(L)$ of the PXP Hamiltonian grows with the golden ratio 
+which implies a Fibonacci sequence, with the initial conditions $\mathcal{D}(1)=2$ and $\mathcal{D}(2) = 3$. This also implies that the dimension of the biggest block Hilbert space $\mathcal{D}(L)$ of the PXP Hamiltonian grows with the golden ratio 
 \[
 \phi^L = \left(\frac{1+\sqrt{5}}{2}\right)^L \approx (1.618)^L,
 \]
 with growing system sizes, rather than $2^L$.
+
 \subsection{Translation Invariance}
 The PXP Hamiltonian has translation symmetry, since every site sees the same rule and the chain is periodic. We can use this to create a basis of symmetrized momentum states and block diagonalize the biggest block in momentum sectors with the moment $k$.
+
+\section{\label{sec:Num_methods}Numerical Methods}
+
+\subsection{Sparse Hamiltonian and Adjacency Graph}
+
+A sparse matrix is a matrix where there are much more zero elements than nonzero elements. We can conveniently store the information of such matrices by only considering their nonzero elements. The matrix form of the PXP Hamiltonian is also sparse (refer to \Cref{eq:4Lfullmatrix} for an example for $L = 4$), and we can find its elements by the algorithm,
+
+\begin{enumerate}
+    \item Generate the computational basis states $\{\ket{i}\}$.
+    \item Initialize empty lists for the row indices, column indices, and matrix entries.
+    \item For each basis state $\ket{i}$ and each lattice site $n$, apply the local operator
+    $P_{n-1}X_nP_{n+1}$.
+    \item If the action is allowed, identify the resulting state $\ket{j}$. We now have $\bra{j}H\ket{i} = H_{ji}$.
+    \item Append $j$ to the row list, $i$ to the column list and a $1$ to the data list.
+    \item Construct the sparse Hamiltonian by feeding the lists to \texttt{scipy.sparse.csr\_matrix}.
+\end{enumerate}
+
+After this, the adjacency graph can be conveniently drawn using \texttt{networkx.from\_scipy\_sparse\_array}. The examples for full matrix and its adjacency graph can be seen in \Cref{eq:L4fullmatrix} and \Cref{fig:L4adjacencygraph} respectively.
+
+
+\subsection{Exact Diagonalization Benchmark}
+
+To be used as benchmark, we fully diagonalize the biggest block of the PXP Hamiltonian by using the dense matrix version of the Hamiltonian. Different blocks of the Hamiltonian can be accessed by using \texttt{networkx.connected\_components} after forming the adjacency matrix. The biggest block of the Hamiltonian is then accessed by taking the list which has the longest length in a list of lists we get from \texttt{networkx.connected\_components}. The exact diagonalization is then carried out by \texttt{scipy.linalg.eigh} after converting the sparse matrix to array. The result is then stored to be used as benchmark. The full dense spectrum for $L = 16$ case can be seen in \Cref{fig:fulldense}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{figures/full_dense_spectrum.png}
+    \caption{Exact diagonalization for $L = 16$.}
+    \label{fig:fulldense}
+\end{figure}
+\subsection{Entanglement Entropy via Reshaping}
+
+\subsection{Chebyshev Polynomial Filtering}
+
+\appendix
+
+\section{Dense Hamiltonian for $L=4$}
+
+For illustration, the full Hamiltonian for $L=4$ in the computational basis can be seen in \Cref{eq:L4fullmatrix}.
+
+\begin{equation}\label{eq:L4fullmatrix}
+H =
+\begin{pmatrix} 
+0 & 1 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0
+\end{pmatrix}
+\end{equation}
+
+\section{Adjacency Graph for $L=4$}
+
+For illustration, the adjacency graph of thee Hamiltonian for $L=4$ in the computational basis can be seen in \Cref{fig:L4adjacencygraph}.
+
+\begin{figure*}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/adjacency_graph.png}
+    \caption{The adjacency graph of thee Hamiltonian for $L=4$}
+    \label{fig:L4adjacencygraph}
+\end{figure*}
+
 \bibliography{references}% Produces the bibliography via BibTeX.
 
 \end{document}
