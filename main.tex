@@ -132,7 +132,7 @@ $\ket{0}$. This effectively models the blockade constraint.
 
 The Rydberg blockade constraint forbids both neighboring atoms to be in the excited state at the same time. This means the states that contain adjacent $\ket{\cdots 11\cdots}$ configurations are not physically relevant. If we look at the adjacency graph of the Hamiltonian, which is constructed by connecting two basis states whenever the corresponding Hamiltonian matrix element $\bra{n_0n_1\cdots}H\ket{n_0'n_1'\cdots}$ is nonzero, we see that the largest connected component is formed by the basis states that satisfy the Rydberg blockade constraint. Therefore, we restrict ourselves to the biggest block of the Hamiltonian for our calculations.
 
-Another curious property of the biggest block is its dimension. Assume we have a chain of atoms of size $L$, then we have the Hilbert space of the biggest block with dimension
+Another curious property of the biggest block is its dimension. Assume we have a chain of atoms of size $L$, and we have open boundary conditions, then we have the Hilbert space of the biggest block with dimension
 \begin{equation}
     \operatorname{dim}\mathcal{H}_\text{biggest}(L)=\mathcal{D}(L), 
 \end{equation}
@@ -146,14 +146,54 @@ which implies a Fibonacci sequence, with the initial conditions $\mathcal{D}(1)=
 \]
 with growing system sizes, rather than $2^L$.
 
+For periodic boundary conditions, the blockade constraint also acts between the first and last atoms, which changes the counting from the open-chain case. This time, we can split the allowed configurations according to the value of the first site. If $\ket{n_0}=\ket{0}$, the remaining $L-1$ sites form an open chain with the blockade constraint, giving $\mathcal{D}_{\text{open}}(L-1)$ configurations. If $\ket{n_0}=\ket{1}$, then periodicity forces both neighboring sites to be zero, $\ket{n_1}=\ket{n_{L-1}}=\ket{0}$. The remaining free part can then be thought of as an $(L-3)$-atom chain with open boundary conditions, which has $\mathcal{D}_{\text{open}}(L-3)$ configurations. Thus we have
+\begin{equation}
+\mathcal{D}_{\text{periodic}}(L) = \mathcal{D}_{\text{open}}(L-1) + \mathcal{D}_{\text{open}}(L-3).\label{eq:periodic_open}
+\end{equation}
+Using $\mathcal{D}_{\text{open}}(L)=F_{L+2}$, \Cref{eq:periodic_open} becomes
+\begin{equation}
+\mathcal{D}_{\text{periodic}}(L) = F_{L+1}+F_{L-1},
+\end{equation}
+which is the $L$-th Lucas number \cite{OEIS_A000032}. The constrained Hilbert space still grows asymptotically as $\phi^L$, but with the periodic boundary condition included exactly.
+
 \subsection{Translation Invariance}
-The PXP Hamiltonian has translation symmetry, since every site sees the same rule and the chain is periodic. We can use this to create a basis of symmetrized momentum states and block diagonalize the biggest block in momentum sectors with the moment $k$.
+The PXP Hamiltonian has translation symmetry, since every site sees the same rule and the chain is periodic. We can use this to create a basis of symmetrized momentum states and block diagonalize the biggest block in momentum sectors with the moment $k$. The construction of the momentum basis in this section follows the lecture notes \cite{luitz2026physics767}.
+
+To use the translation invariance in our favor, we define the translation operator $T$ as the operator which shifts every spin by one site,
+
+\begin{equation}
+    T\ket{n_0 n_1 \cdots n_{L-1}} = \ket{n_{L-1} n_0 \cdots n_{L-2}} .
+\end{equation}
+
+Since the Hamiltonian is a sum over identical local terms on every site,
+translation does not change the Hamiltonian. Therefore,
+\[
+[H,T]=0 .
+\]
+This means we can diagonalize $H$ and $T$ simultaneously, and the Hamiltonian can be decomposed into momentum sectors with the basis of translation invariant momentum states
+\begin{equation}
+    \ket{\psi_{k,\vec{n}}} = \frac{1}{\mathcal{N}_{k,\vec{n}}} \sum_{r=1}^{L} e^{ikr} T^r \ket{\operatorname{rep}(\vec{n})}. \label{eq:momentum_state_basis}
+\end{equation}
+Here $k = 2\pi n_k/L$ are the momentum sectors, $n_k \in \mathbb{Z}_L$, and $\ket{\text{rep}(\vec{n})}$ are representatives of different families (orbits) $\mathcal{F}(\vec{n})$, created by the translation operator $T$, defined as
+\begin{equation}
+    \ket{\text{rep}(\vec{n})} = T^{x_{\vec{n}}} \ket{\vec{n}}.
+\end{equation}
+Here, we use $\ket{\vec{n}} = \ket{n_0n_1\cdots n_{L-1}}$ as a shorthand notation. The representative $\ket{\text{rep}(\vec{n})}$ of a family is usually chosen as the index that has the lowest binary representation.
+
+When we look at the normalization of \Cref{eq:momentum_state_basis} for $f_{\vec{n}} = \# \mathcal{F}(\vec{n}) < L$, the normalization condition gives us a selection rule 
+\begin{equation}
+    f_{\vec{n}}n_k \ \text{(mod $L$)} = 0,
+\end{equation}
+because the momentum projection is not always normalizable. If this rule is not satisfied, then the projected momentum state must be omitted from the basis. For normalizable states, we can write
+\begin{equation}
+    \ket{\psi_{k,\vec{n}}} = \frac{1}{\sqrt{f_{\vec{n}}}} \sum_{r=1}^{f_{\vec{n}}} e^{ikr} T^r \ket{\operatorname{rep}(\vec{n})}. \label{eq:momentum_state_basis_normalized}
+\end{equation}
 
 \section{\label{sec:Num_methods}Numerical Methods}
 
 \subsection{Sparse Hamiltonian and Adjacency Graph}
 
-A sparse matrix is a matrix where there are much more zero elements than nonzero elements. We can conveniently store the information of such matrices by only considering their nonzero elements. The matrix form of the PXP Hamiltonian is also sparse (refer to \Cref{eq:4Lfullmatrix} for an example for $L = 4$), and we can find its elements by the algorithm,
+A sparse matrix is a matrix where there are much more zero elements than nonzero elements. We can conveniently store the information of such matrices by only considering their nonzero elements. The matrix form of the PXP Hamiltonian is also sparse (refer to \Cref{eq:L4fullmatrix} for an example for $L = 4$), and we can find its elements by the algorithm,
 
 \begin{enumerate}
     \item Generate the computational basis states $\{\ket{i}\}$.
@@ -221,7 +261,10 @@ For illustration, the adjacency graph of thee Hamiltonian for $L=4$ in the compu
     \label{fig:L4adjacencygraph}
 \end{figure*}
 
-\bibliography{references}% Produces the bibliography via BibTeX.
+\clearpage
+
+\bibliography{references}
+
 
 \end{document}
 %
