@@ -156,7 +156,7 @@ Using $\mathcal{D}_{\text{open}}(L)=F_{L+2}$, \Cref{eq:periodic_open} becomes
 \end{equation}
 which is the $L$-th Lucas number \cite{OEIS_A000032}. The constrained Hilbert space still grows asymptotically as $\phi^L$, but with the periodic boundary condition included exactly.
 
-\subsection{Translation Invariance}
+\subsection{Translation Invariance and Momentum Sectors}
 The PXP Hamiltonian has translation symmetry, since every site sees the same rule and the chain is periodic. We can use this to create a basis of symmetrized momentum states and block diagonalize the biggest block in momentum sectors with the moment $k$. The construction of the momentum basis in this section follows the lecture notes \cite{luitz2026physics767}.
 
 To use the translation invariance in our favor, we define the translation operator $T$ as the operator which shifts every spin by one site,
@@ -207,6 +207,7 @@ A sparse matrix is a matrix where there are much more zero elements than nonzero
 
 After this, the adjacency graph can be conveniently drawn using \texttt{networkx.from\_scipy\_sparse\_array}. The examples for full matrix and its adjacency graph can be seen in \Cref{eq:L4fullmatrix} and \Cref{fig:L4adjacencygraph} respectively.
 
+\subsection{Momentum Sector Basis Construction}
 
 \subsection{Exact Diagonalization Benchmark}
 
@@ -220,7 +221,57 @@ To be used as benchmark, we fully diagonalize the biggest block of the PXP Hamil
 \end{figure}
 \subsection{Entanglement Entropy via Reshaping}
 
+The scar states are identified by their unusually low entropy compared to usual thermal eigenstates at similar energies. Thus, comparing the entanglement entropy against the energy is a convenient way to identify the scar states inside the spectrum. The computation of the entanglement entropy follows the script by Ulrich Schollwöck \cite{Schollwoeck2011DMRGMPS}.
+
+To compute the entanglement entropy, the system is thought of as a bipartite system. For a chain of length $L$, we divide the system into two subsystems $A$ and $B$, with lengths $L_A$ and $L_B$, such that $L_A+L_B=L$. A general eigenstate can be written as
+\begin{equation}
+    \ket{\psi}
+    =
+    \sum_{i_A,i_B} \psi_{i_A i_B}
+    \ket{i_A}\otimes\ket{i_B},
+\end{equation}
+where $\ket{i_A}$ and $\ket{i_B}$ are computational basis states of the two subsystems. The coefficients of the state are then reshaped into a matrix
+\begin{equation}
+    M_{i_A i_B} = \psi_{i_A i_B}.
+\end{equation}
+The singular values of this matrix are the Schmidt coefficients of the bipartition. Equivalently, if
+\begin{equation}
+    M = U S V^\dagger,
+\end{equation}
+then the diagonal entries $s_\alpha$ of $S$ give the Schmidt coefficients.
+
+The reduced density matrix of subsystem $A$, defined by $\rho_A=\operatorname{Tr}_B(\rho)$, has eigenvalues
+\begin{equation}
+    \lambda_\alpha = s^2_\alpha,
+\end{equation}
+and the von Neumann entanglement entropy is
+\begin{equation}
+    S_A = -\sum_\alpha \lambda_\alpha \log \lambda_\alpha =-\sum_\alpha s^2_\alpha \log s^2_\alpha  .
+\end{equation}
+In the numerical implementation, this can be directly computed by reshaping the eigenvector into a $2^{L/2} \times 2^{L/2}$ matrix, performing a singular value decomposition, and summing over the squared singular values. However, because of the floating point arithmetic, Schmidt values can get absurdly low, causing \texttt{numpy} to interpret them as zero inside the logarithm. Therefore a tolerance of $s_\alpha>10^{-15}$ should be taken.
+
+Since the Hamiltonian is diagonalized in the blockade constrained Hilbert space, the eigenvectors first have to be embedded back into the full computational basis before reshaping to compute their entropies correctly.
 \subsection{Chebyshev Polynomial Filtering}
+The scar states live on a broad spectrum, thus if we want to find them we need to be specifically targeting them by using a filtering method that amplifies the targeted energy eigenstate's eigenvalue and suppresses the rest. In theory, this can be done by using the Dirac delta function
+\begin{equation}
+    \delta(E-H),
+\end{equation}
+which would project onto eigenstates with energy $E$, so we would be able to target specific energy eigenstates directly. However, numerically this is not directly usable because the peak of Dirac delta function is infinitely sharp. Because of this, we replace the Dirac delta function with some approximation of it by expanding the delta function at the target value with some polynomial series, this time the Chebyshev polynomials.
+
+Chebyshev polynomials are defined by
+\begin{equation}
+    T_n(x)=\cos(n\arccos x),
+\end{equation}
+with the inner product
+\begin{equation}
+    \int_{-1}^1dx\,T_m(x)T_n(x)/\sqrt{1-x^2} = \delta_{nm},
+\end{equation}
+and satisfy the recursion relation
+\begin{equation}
+    T_{n+1}(x)=2xT_n(x)-T_{n-1}(x).
+\end{equation}
+Chebyshev polynomials are used because they are the optimal way to do polynomial filtering for Hermitian matrices, and their recurrence relation gives us a convenient way to calculate the current vector product with using the old vector products \cite{luitz2026physics767}.
+
 
 \appendix
 
