@@ -68,7 +68,7 @@
 \date{\today}
 
 \begin{abstract}
-There will be some abstract here...
+There will be some abstract here... 
 \end{abstract}
 
 \maketitle
@@ -81,7 +81,13 @@ There will be some abstract here...
 
 \section{\label{sec:introduction} Introduction}
 
-Why the topic is relevant and important, current research status etc.
+Thermalization process of quantum states is a topic of central attention in quantum many body physics. One particular instance of work on this topic is the \textit{Eigenstate Thermalization Hypothesis} (ETH), which says that although we have unitary time evolution in a closed quantum system, local observables may approach stationary values that can be described well by statistical mechanics. Therefore, a generic (non-integrable) quantum system energy eigenstate may already give us thermal expectation values for local observables \cite{Deutsch_2018, Turner_2018}.
+
+However, there are quantum systems that have ETH violating states. The particular example we study in this case is the \textit{PXP Hamiltonian}, which is used to effectively describe a one dimensional \textit{Rydberg atom chain}. Atoms in the Rydberg atom chain have two states, with $\ket{0}$ being their electronic ground state, and $\ket{1}$ being their highly excited Rydberg state. In the Rydberg state, the dipole moment of the corresponding atom is so large that it suppresses the nearby atoms from being simultaneously excited. This constraint is called the \textit{Rydberg blockade}. This constraint is modeled by the PXP Hamiltonian through projected spin flip dynamics.
+
+The ETH violating states of the PXP Hamiltonian are called the \textit{scar states}. Scar states are characterized by their unusually low entanglement compared to other eigenstates at similar energies. They also have large overlap with some initial states, called the \textit{N\'eel type} states, which gives us persistent many body revivals in the time evolution of the system \cite{Turner_2018}. They only form a small part of the spectrum, and they are evenly spaced within the whole spectrum, which makes pinpointing the scar states a numerically interesting problem.
+
+Like with any state finding problem, the problem gets exponentially difficult with increasing system size $L$, this case as $2^L$. In this work, our first step was to restrict the system to the blockade constrained Hilbert space by analyzing the adjacency graph of the Hamiltonian, and decomposing it to its momentum sectors using the translation invariance of the system, while using the exact diagonalization of $L = 16$ case as benchmark. The entanglement entropy can be then calculated using simple reshaping of the eigenstate and applying a singular value decomposition (SVD). Lastly, Chebyshev polynomial filtering was used to determine the scar states by targeting specific energies without diagonalizing the whole Hamiltonian.
 
 \section{\label{sec:PXPHamiltonian} The PXP Hamiltonian}
 \subsection{The Action of the PXP Hamiltonian}
@@ -182,7 +188,7 @@ Here, we use $\ket{\vec{n}} = \ket{n_0n_1\cdots n_{L-1}}$ as a shorthand notatio
 
 When we look at the normalization of \Cref{eq:momentum_state_basis} for $f_{\vec{n}} = \# \mathcal{F}(\vec{n}) < L$, the normalization condition gives us a selection rule 
 \begin{equation}
-    f_{\vec{n}}n_k \ \text{(mod $L$)} = 0,
+    f_{\vec{n}}n_k \ \text{(mod $L$)} = 0, \label{eq:normalizationcond}
 \end{equation}
 because the momentum projection is not always normalizable. If this rule is not satisfied, then the projected momentum state must be omitted from the basis. For normalizable states, we can write
 \begin{equation}
@@ -191,7 +197,7 @@ because the momentum projection is not always normalizable. If this rule is not 
 
 \section{\label{sec:Num_methods}Numerical Methods}
 
-\subsection{Sparse Hamiltonian and Adjacency Graph}
+\subsection{\label{sec:sparse_h_adj_gr}Sparse Hamiltonian and Adjacency Graph}
 
 A sparse matrix is a matrix where there are much more zero elements than nonzero elements. We can conveniently store the information of such matrices by only considering their nonzero elements. The matrix form of the PXP Hamiltonian is also sparse (refer to \Cref{eq:L4fullmatrix} for an example for $L = 4$), and we can find its elements by the algorithm,
 
@@ -208,7 +214,13 @@ A sparse matrix is a matrix where there are much more zero elements than nonzero
 After this, the adjacency graph can be conveniently drawn using \texttt{networkx.from\_scipy\_sparse\_array}. The examples for full matrix and its adjacency graph can be seen in \Cref{eq:L4fullmatrix} and \Cref{fig:L4adjacencygraph} respectively.
 
 \subsection{Momentum Sector Basis Construction}
+Momentum sector basis construction can be straightforwardly done using \Cref{eq:momentum_state_basis_normalized}. First, the sparse Hamiltonian is constructed with the related algorithm in \Cref{sec:sparse_h_adj_gr}. Then, the biggest block is accessed by using \texttt{networkx.connected\_components} and looking at the block with the maximum length. After this, the basis states that belogn to $H_\mathrm{biggest}$ are grouped into translation orbits (families), and the smallest integer index is chosen as the representative of their corresponding orbits. Not every orbit can contribute to every momentum sector, so we need to do a selection by using \Cref{eq:normalizationcond} for every $k$. We also need to be careful using only the basis states inside $H_\mathrm{biggest}$ when we want to only work with the basis of $H_\mathrm{biggest}$ rather than $H$.
 
+The resulting momentum states are then stored as the columns of a transformation matrix $V_k$. The Hamiltonian restricted to the momentum sector $k$ is then obtained by projection,
+\begin{equation}
+H_k=V_k^\dagger H_{\mathrm{biggest}}V_k.
+\end{equation}
+This way, we can diagonalize each $H_k$ independently, which considerably reduces the dimensions of the matrices involved in the process. However, this straightforward way of finding the momentum sector basis becomes the bottleneck when we are trying to scale up to larger system sizes $L$. 
 \subsection{Exact Diagonalization Benchmark}
 
 To be used as benchmark, we fully diagonalize the biggest block of the PXP Hamiltonian by using the dense matrix version of the Hamiltonian. Different blocks of the Hamiltonian can be accessed by using \texttt{networkx.connected\_components} after forming the adjacency matrix. The biggest block of the Hamiltonian is then accessed by taking the list which has the longest length in a list of lists we get from \texttt{networkx.connected\_components}. The exact diagonalization is then carried out by \texttt{scipy.linalg.eigh} after converting the sparse matrix to array. The result is then stored to be used as benchmark. The full dense spectrum for $L = 16$ case can be seen in \Cref{fig:fulldense}.
@@ -271,6 +283,24 @@ and satisfy the recursion relation
     T_{n+1}(x)=2xT_n(x)-T_{n-1}(x).
 \end{equation}
 Chebyshev polynomials are used because they are the optimal way to do polynomial filtering for Hermitian matrices, and their recurrence relation gives us a convenient way to calculate the current vector product with using the old vector products \cite{luitz2026physics767}.
+
+After the recursive function for finding the $p(A)\vec{x}$ is defined, where $A$ is a matrix, $p(A)$ is the polynomial filter, and $\vec{x}$ is a vector, the corresponding $(\mathrm{Matrix}\,\times\,\mathrm{Vector})$ method is turned into a linear operator using \texttt{scipy.sparse.linalg.aslinearoperator}. Since the scar states of the system is not known beforehand, the system is sweeped across the eigenspectrum with target values $E_\mathrm{target}=-L-1, -L,\dots,L,L+1$ to boost the corresponding eigenvalues and suppress the rest, and for every target $20$ eigenpairs were calculated using the method. There is freedom in choosing the target eigenvalue interval and the number of eigenpairs, and the chosen interval may or may not be optimal depending on system size. With this method, rather than looking at the whole eigenspectrum, which can have thousands of eigenpairs, we just look at $20$ eigenpairs close to the current target energy eigenvalue.
+
+Since this method amplifies target energies as
+\begin{equation}
+    E_\mathrm{target} \longrightarrow p(E_\mathrm{target}), 
+\end{equation}
+we need to find the actual energies once more for the entropy plot. Since the Chebyshev eigenvectors are still the same as the actual eigenvectors, i.e. we have
+\begin{equation}
+    \begin{aligned}
+        H\ket{v} &= E\ket{v}, \\
+        p(H)\ket{v} &= p(E)\ket{v},
+    \end{aligned} 
+\end{equation}
+we can still use these eigenvectors to find their corresponding eigenvalues by
+\begin{equation}
+    \bra{v}H\ket{v} = E.
+\end{equation}
 
 
 \appendix
