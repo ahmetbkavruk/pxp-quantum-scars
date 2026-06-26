@@ -1,0 +1,65 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usetheme{Madrid}
+\useoutertheme[subsection=false]{miniframes}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{braket}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[backend=biber,style=authoryear]{biblatex}
+
+\addbibresource{references.bib}
+
+\setbeamertemplate{navigation symbols}{}
+
+\title[PXP Polynomial Filtering]
+{Targeting Scar States Using Polynomial Filtering in the PXP Hamiltonian}
+
+\author{Ahmet Berk Kavruk}
+\date{July 3, 2026}
+
+\begin{document}
+
+\begin{frame}[plain,noframenumbering]
+    \titlepage
+\end{frame}
+
+\begin{frame}{Eigenstate Thermalization Hypothesis (ETH)}
+    \begin{itemize}
+        \item Explains thermalization in isolated quantum many-body systems.
+        \item Local observables relax to match expected values from statistical mechanics.
+        \item Individual generic eigenstates mimic thermal ensembles.
+    \end{itemize}
+    \vfill
+    \begin{block}{Important: ETH Violations}
+        Some systems have rare, unusual eigenstates that strongly violate ETH and fail to thermalize.
+    \end{block}
+\end{frame}
+
+\begin{frame}{The PXP Model \& Quantum Many-Body Scars}
+    \begin{itemize}
+        \item Models projected spin-flip dynamics on a 1D Rydberg atom chain:
+        \begin{equation}
+            H = \sum_{i=0}^{L-1} P_{i} X_{(i+1)\%L} P_{(i+2)\%L}
+        \end{equation}
+        where $P_i = \frac{1}{2}(\mathbb{1} - Z_i)$ projects site $i$ onto its ground state $\ket{0}$.
+        \item ETH-violating eigenstates form \textbf{quantum many-body scar states}.
+        \item Scars are rare, evenly spaced, and possess unusually low entanglement.
+        \item But there is the usual problem, the Hilbert space grows exponentially.
+
+        \begin{block}{Problem of the Project}
+            Can we use Chebyshev polynomial filtering to target the scar states without doing full exact diagonalization?
+        \end{block}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Understanding the PXP Hamiltonian}
+    Adjacency graph etc.
+\end{frame}
+
+
+\end{document}
