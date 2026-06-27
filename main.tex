@@ -195,7 +195,7 @@ because the momentum projection is not always normalizable. If this rule is not 
     \ket{\psi_{k,\vec{n}}} = \frac{1}{\sqrt{f_{\vec{n}}}} \sum_{r=1}^{f_{\vec{n}}} e^{ikr} T^r \ket{\operatorname{rep}(\vec{n})}. \label{eq:momentum_state_basis_normalized}
 \end{equation}
 
-\section{\label{sec:Num_methods}Numerical Methods}
+\section{\label{sec:Num_methods}Numerical Methods \MakeLowercase{and} Results}
 
 \subsection{\label{sec:sparse_h_adj_gr}Sparse Hamiltonian and Adjacency Graph}
 
@@ -213,6 +213,18 @@ A sparse matrix is a matrix where there are much more zero elements than nonzero
 
 After this, the adjacency graph can be conveniently drawn using \texttt{networkx.from\_scipy\_sparse\_array}. The examples for full matrix and its adjacency graph can be seen in \Cref{eq:L4fullmatrix} and \Cref{fig:L4adjacencygraph} respectively.
 
+\subsection{Exact Diagonalization Benchmark}
+
+To be used as benchmark, we fully diagonalize the biggest block of the PXP Hamiltonian by using the dense matrix version of the Hamiltonian. Different blocks of the Hamiltonian can be accessed by using \texttt{networkx.connected\_components} after forming the adjacency matrix. The biggest block of the Hamiltonian is then accessed by taking the list which has the longest length in a list of lists we get from \texttt{networkx.connected\_components}. The exact diagonalization is then carried out by \texttt{scipy.linalg.eigh} after converting the sparse matrix to array. The result is then stored to be used as benchmark. The full dense spectrum for $L = 16$ case can be seen in \Cref{fig:fulldense}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{figures/full_dense_spectrum.png}
+    \caption{Full dense spectrum for the $L=16$ PXP Hamiltonian.}
+    \label{fig:fulldense}
+\end{figure}
+
+
 \subsection{Momentum Sector Basis Construction}
 Momentum sector basis construction can be straightforwardly done using \Cref{eq:momentum_state_basis_normalized}. First, the sparse Hamiltonian is constructed with the related algorithm in \Cref{sec:sparse_h_adj_gr}. Then, the biggest block is accessed by using \texttt{networkx.connected\_components} and looking at the block with the maximum length. After this, the basis states that belogn to $H_\mathrm{biggest}$ are grouped into translation orbits (families), and the smallest integer index is chosen as the representative of their corresponding orbits. Not every orbit can contribute to every momentum sector, so we need to do a selection by using \Cref{eq:normalizationcond} for every $k$. We also need to be careful using only the basis states inside $H_\mathrm{biggest}$ when we want to only work with the basis of $H_\mathrm{biggest}$ rather than $H$.
 
@@ -221,16 +233,15 @@ The resulting momentum states are then stored as the columns of a transformation
 H_k=V_k^\dagger H_{\mathrm{biggest}}V_k.
 \end{equation}
 This way, we can diagonalize each $H_k$ independently, which considerably reduces the dimensions of the matrices involved in the process. However, this straightforward way of finding the momentum sector basis becomes the bottleneck when we are trying to scale up to larger system sizes $L$. 
-\subsection{Exact Diagonalization Benchmark}
-
-To be used as benchmark, we fully diagonalize the biggest block of the PXP Hamiltonian by using the dense matrix version of the Hamiltonian. Different blocks of the Hamiltonian can be accessed by using \texttt{networkx.connected\_components} after forming the adjacency matrix. The biggest block of the Hamiltonian is then accessed by taking the list which has the longest length in a list of lists we get from \texttt{networkx.connected\_components}. The exact diagonalization is then carried out by \texttt{scipy.linalg.eigh} after converting the sparse matrix to array. The result is then stored to be used as benchmark. The full dense spectrum for $L = 16$ case can be seen in \Cref{fig:fulldense}.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\linewidth]{figures/full_dense_spectrum.png}
-    \caption{Exact diagonalization for $L = 16$.}
-    \label{fig:fulldense}
+    \includegraphics[width=\linewidth]{figures/task2_vs_task3.png}
+    \caption{Comparison of the biggest block exact diagonalization and the momentum sectors.}
+    \label{fig:task2_vs_task3}
 \end{figure}
+
+
 \subsection{Entanglement Entropy via Reshaping}
 
 The scar states are identified by their unusually low entropy compared to usual thermal eigenstates at similar energies. Thus, comparing the entanglement entropy against the energy is a convenient way to identify the scar states inside the spectrum. The computation of the entanglement entropy follows the script by Ulrich Schollwöck \cite{Schollwoeck2011DMRGMPS}.
@@ -263,6 +274,14 @@ and the von Neumann entanglement entropy is
 In the numerical implementation, this can be directly computed by reshaping the eigenvector into a $2^{L/2} \times 2^{L/2}$ matrix, performing a singular value decomposition, and summing over the squared singular values. However, because of the floating point arithmetic, Schmidt values can get absurdly low, causing \texttt{numpy} to interpret them as zero inside the logarithm. Therefore a tolerance of $s_\alpha>10^{-15}$ should be taken.
 
 Since the Hamiltonian is diagonalized in the blockade constrained Hilbert space, the eigenvectors first have to be embedded back into the full computational basis before reshaping to compute their entropies correctly.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{figures/task4_entropies.png}
+    \caption{Entanglement entropies of the eigenstates against their eigenvalues.}
+    \label{fig:task4_entropies}
+\end{figure}
+
 \subsection{Chebyshev Polynomial Filtering}
 The scar states live on a broad spectrum, thus if we want to find them we need to be specifically targeting them by using a filtering method that amplifies the targeted energy eigenstate's eigenvalue and suppresses the rest. In theory, this can be done by using the Dirac delta function
 \begin{equation}
@@ -286,6 +305,13 @@ Chebyshev polynomials are used because they are the optimal way to do polynomial
 
 After the recursive function for finding the $p(A)\vec{x}$ is defined, where $A$ is a matrix, $p(A)$ is the polynomial filter, and $\vec{x}$ is a vector, the corresponding $(\mathrm{Matrix}\,\times\,\mathrm{Vector})$ method is turned into a linear operator using \texttt{scipy.sparse.linalg.aslinearoperator}. Since the scar states of the system is not known beforehand, the system is sweeped across the eigenspectrum with target values $E_\mathrm{target}=-L-1, -L,\dots,L,L+1$ to boost the corresponding eigenvalues and suppress the rest, and for every target $20$ eigenpairs were calculated using the method. There is freedom in choosing the target eigenvalue interval and the number of eigenpairs, and the chosen interval may or may not be optimal depending on system size. With this method, rather than looking at the whole eigenspectrum, which can have thousands of eigenpairs, we just look at $20$ eigenpairs close to the current target energy eigenvalue.
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{figures/task5_L20.png}
+    \caption{Entropies of the Chebyshev-targeted eigenstates.}
+    \label{fig:task5_L20}
+\end{figure}
+
 Since this method amplifies target energies as
 \begin{equation}
     E_\mathrm{target} \longrightarrow p(E_\mathrm{target}), 
@@ -301,6 +327,20 @@ we can still use these eigenvectors to find their corresponding eigenvalues by
 \begin{equation}
     \bra{v}H\ket{v} = E.
 \end{equation}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{figures/task3_k0_task5_eigenvalue_comparison.pdf}
+    \caption{Comparison of exact $n_k=0$ eigenvalues and Chebyshev-targeted eigenvalues.}
+    \label{fig:task3_k0_task5_eigenvalue_comparison}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{figures/task4_task5_entropy_comparison_order_20.pdf}
+    \caption{Comparison of the exact diagonalization entropies and the Chebyshev filter entropies.}
+    \label{fig:task4_task5_entropy_comparison_order_20}
+\end{figure}
 
 
 \appendix

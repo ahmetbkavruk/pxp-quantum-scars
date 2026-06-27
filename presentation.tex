@@ -2,7 +2,7 @@
 
 \usetheme{Madrid}
 \useoutertheme[subsection=false]{miniframes}
-
+\setcounter{MaxMatrixCols}{20}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{mathtools}
@@ -40,13 +40,15 @@
     \end{block}
 \end{frame}
 
+\section{PXP Hamiltonian}
+
 \begin{frame}{The PXP Model \& Quantum Many-Body Scars}
     \begin{itemize}
         \item Models projected spin-flip dynamics on a 1D Rydberg atom chain:
         \begin{equation}
             H = \sum_{i=0}^{L-1} P_{i} X_{(i+1)\%L} P_{(i+2)\%L}
         \end{equation}
-        where $P_i = \frac{1}{2}(\mathbb{1} - Z_i)$ projects site $i$ onto its ground state $\ket{0}$.
+        where $P_i = \frac{1}{2}(\mathbb{I} - Z_i)$ projects site $i$ onto its ground state $\ket{0}$.
         \item ETH-violating eigenstates form \textbf{quantum many-body scar states}.
         \item Scars are rare, evenly spaced, and possess unusually low entanglement.
         \item But there is the usual problem, the Hilbert space grows exponentially.
@@ -58,8 +60,150 @@
 \end{frame}
 
 \begin{frame}{Understanding the PXP Hamiltonian}
-    Adjacency graph etc.
+
+\begin{columns}[T]
+
+\begin{column}[c]{0.42\linewidth}
+\begin{itemize}
+    \item The Rydberg blockade excludes configurations with adjacent excitations, such as $\ket{\cdots 11 \cdots}$.
+    \item Basis states are represented as nodes in an adjacency graph.
+    \item The physical blockade-constrained subspace appears as the largest connected component of this graph.
+\end{itemize}
+\end{column}
+
+\begin{column}[c]{0.56\textwidth}
+\begin{figure}
+    \centering
+    \vspace{-0.3cm}
+    \includegraphics[width=0.9\textwidth]{figures/adjacency_graph.png}
+    \caption{Full computational basis adjacency graph for an $L=5$ chain.}
+\end{figure}
+\end{column}
+
+\end{columns}
+
 \end{frame}
 
+\begin{frame}{PXP Hamiltonian is Sparse}
+\footnotesize
+ 
+    \begin{equation}\label{eq:L4fullmatrix}
+H =
+\begin{pmatrix} 
+\cdot & 1 & 1 & \cdot & 1 & \cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+1 & \cdot & \cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+1 & \cdot & \cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & 1 & \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot
+\end{pmatrix}
+\end{equation}
+\end{frame}
+
+\begin{frame}{The Constrained Dimension Grows as a Fibonacci Sequence}
+
+For open boundary conditions, the blockade constraint gives the recursion
+\begin{equation}
+    \mathcal{D}_{\mathrm{open}}(L+1)=\mathcal{D}_{\mathrm{open}}(L)+\mathcal{D}_{\mathrm{open}}(L-1).
+\end{equation}
+
+The two terms correspond to adding $\ket{0}$ freely, or adding $\ket{1}$ after a forced neighboring $\ket{0}$.
+
+With $\mathcal{D}_{\mathrm{open}}(1)=2$ and $\mathcal{D}_{\mathrm{open}}(2)=3$,
+\begin{equation}
+    \mathcal{D}_{\mathrm{open}}(L)\sim\phi^L,\qquad \phi=\frac{1+\sqrt{5}}{2}.
+\end{equation}
+
+For periodic boundary conditions, the first and last sites are also constrained:
+\begin{equation}
+    \mathcal{D}_{\mathrm{periodic}}(L)=F_{L+1}+F_{L-1}.
+\end{equation}
+\end{frame}
+
+\section{Exact Diagonalization}
+
+\begin{frame}{Reference Benchmark via Full Exact Diagonalization}
+    \begin{columns}
+        \begin{column}{0.44\textwidth}
+            \begin{itemize}
+                \item Dense solvers (\texttt{scipy.linalg.eigh}) compute the full spectrum.
+                \item For system size $L=16$, the constrained sector dimension is $\mathcal{D} = 2207$.
+                \item This exact spectrum will be our benchmark for later numerical methods.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.54\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{figures/full_dense_spectrum.png}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\section{Translation Invariance}
+
+\begin{frame}{Translation Symmetry Momentum Splitting}
+    \begin{columns}
+        \begin{column}{0.44\textwidth}
+            \begin{itemize}
+                \item Periodic chains commute with translation: $[H, T] = 0$.
+                \item We decompose space into momentum blocks $k = 2\pi n_k / L$.
+                \item Symmetrized basis states built from orbit families $\mathcal{F}(\vec{n})$:
+                \begin{equation}
+                    \ket{\psi_{k,\vec{n}}} = \frac{1}{\mathcal{N}_{k,\vec{n}}} \sum_{r=1}^{L} e^{ikr} T^r \ket{\operatorname{rep}(\vec{n})}. \label{eq:momentum_state_basis}
+                \end{equation}
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.54\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.95\textwidth]{figures/translation_graph.png}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Orbit Selection Rules \& Momentum Sector Diagonalization}
+
+\begin{columns}
+    \begin{column}{0.52\textwidth}
+        When we look at the normalization for $f_{\vec{n}} < L$, the normalization condition gives us
+        \begin{equation}
+            f_{\vec{n}}n_k \ \text{(mod $L$)} = 0 .
+        \end{equation}
+
+        If this rule is not satisfied, then the projected momentum state must be omitted from the basis.
+
+        For normalizable states,
+        \begin{equation}
+            \ket{\psi_{k,\vec{n}}}
+            =
+            \frac{1}{\sqrt{f_{\vec{n}}}}
+            \sum_{r=1}^{f_{\vec{n}}}
+            e^{ikr} T^r
+            \ket{\operatorname{rep}(\vec{n})}.
+        \end{equation}
+    \end{column}
+
+    \begin{column}{0.48\textwidth}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.95\textwidth]{figures/task2_vs_task3.png}
+            \caption{Exact energy eigenvalues resolved across isolated momentum sectors.}
+        \end{figure}
+    \end{column}
+\end{columns}
+
+\end{frame}
 
 \end{document}
