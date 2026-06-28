@@ -176,7 +176,7 @@ For periodic boundary conditions, the first and last sites are also constrained:
 \begin{frame}{Orbit Selection Rules \& Momentum Sector Diagonalization}
 
 \begin{columns}
-    \begin{column}{0.52\textwidth}
+    \begin{column}{0.44\textwidth}
         When we look at the normalization for $f_{\vec{n}} < L$, the normalization condition gives us
         \begin{equation}
             f_{\vec{n}}n_k \ \text{(mod $L$)} = 0 .
@@ -195,15 +195,105 @@ For periodic boundary conditions, the first and last sites are also constrained:
         \end{equation}
     \end{column}
 
-    \begin{column}{0.48\textwidth}
+    \begin{column}{0.54\textwidth}
         \begin{figure}
             \centering
-            \includegraphics[width=0.95\textwidth]{figures/task2_vs_task3.png}
+            \includegraphics[width=0.88\textwidth]{figures/task2_vs_task3.png}
             \caption{Exact energy eigenvalues resolved across isolated momentum sectors.}
         \end{figure}
     \end{column}
 \end{columns}
 
 \end{frame}
+
+\begin{frame}{Entanglement Entropy via SVD}
+    We focus on the $k=0$ momentum block eigenstates to see the scar states. To find the singular values, we first reshape
+    
+    \vspace{0.15cm}
+    
+    \begin{equation*}
+    \resizebox{0.95\textwidth}{!}{$\displaystyle
+        V_{k=0} = 
+        \begin{pmatrix}
+            \uparrow & \uparrow & & \uparrow \\
+            \ket{\psi_1} & \ket{\psi_2} & \cdots & \ket{\psi_N} \\
+            \downarrow & \downarrow & & \downarrow
+        \end{pmatrix}
+        \implies
+        \ket{\psi_i} = 
+        \begin{pmatrix}
+            \psi_{1, 1}^{(i)} \\
+            \psi_{1, 2}^{(i)} \\
+            \vdots \\
+            \psi_{2^{L_A}, 2^{L_B}}^{(i)}
+        \end{pmatrix}
+        \xrightarrow{\text{reshape}}
+        M^{(i)} = 
+        \begin{pmatrix}
+            \psi_{1, 1}^{(i)} & \cdots & \psi_{1, 2^{L_B}}^{(i)} \\
+            \vdots & \ddots & \vdots \\
+            \psi_{2^{L_A}, 1}^{(i)} & \cdots & \psi_{2^{L_A}, 2^{L_B}}^{(i)}
+        \end{pmatrix}.$}
+    \end{equation*}
+
+    \vspace{0.45cm}
+
+    Then we find the entanglement entropies after applying SVD to all $M^{(i)}$
+    \begin{equation}
+        S_A=-\sum_\alpha s^2_\alpha \log s^2_\alpha  .
+    \end{equation}
+\end{frame}
+
+\begin{frame}{States with unusually low entropy: Scar States}
+    \begin{columns}
+        \begin{column}{0.44\textwidth}
+            \vspace{-0.8cm}
+            \begin{itemize}
+                \item Thermal states have high entropies. Their high entanglement results in loss of local information.
+                \item Scar states have unusually low entropies.
+                \item Out of $143$ total number of eigenstates in $k = 0$, only $8$ of them are scar(ce) states.
+                \item The scar state energies span the entire energy range!
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.54\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.95\textwidth]{figures/task4_entropies.png}
+                \caption{Entropies $S_A$ vs energy for $k=0$ at $L = 16$.}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\section{Chebyshev Filtering}
+
+\begin{frame}{The Beauty of Chebyshev Polynomial Filtering}
+    \begin{columns}[T]
+        \begin{column}{0.54\textwidth}
+            \begin{itemize}
+                \item There is a way to target scar states without full exact diagonalization.
+                \item We target an energy eigenstate, amplify its eigenvalue, and suppress the rest.
+                \item The ideal object would be
+                \begin{equation}
+                    \delta(E-H),
+                \end{equation}
+                \item We can approximate it by
+                \begin{equation}
+                    p_k(H)=\sum_{m=0}^k c_mT_m(H).
+                \end{equation}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.44\textwidth}
+        \vspace{-0.58cm}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.83\textwidth]{figures/PolyFilterLecture.png}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
 
 \end{document}
