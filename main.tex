@@ -68,7 +68,7 @@
 \date{\today}
 
 \begin{abstract}
-There will be some abstract here... 
+Quantum scar states are states that violate the Eigenstate Thermalization Hypothesis. In this work, we studied the PXP Hamiltonian on a one dimensional periodic Rydberg atom chain as an example model. The full Hilbert space was restricted into the Rydberg blockade constrained biggest block component. The biggest block component was further decomposed into its momentum sectors using the translation invariance. System size of $L = 16$ was used as a benchmark, and the entropy structure of the $k = 0$ momentum block were calculated by embedding the eigenvectors back into the full basis and applying a singular value decomposition. Chebyshev polynomial was then introduced to target eigenstates near target energy values to be able to find the scar states without diagonalizing the whole eigenspectrum and to scale up the procedure. The methods reproduced the expected eigenspectrum and entanglement entropy structure and the largest system size achieved using Chebyshev filtering was $L = 20$.
 \end{abstract}
 
 \maketitle
@@ -213,7 +213,7 @@ A sparse matrix is a matrix where there are much more zero elements than nonzero
 
 After this, the adjacency graph can be conveniently drawn using \texttt{networkx.from\_scipy\_sparse\_array}. The examples for full matrix and its adjacency graph can be seen in \Cref{eq:L4fullmatrix} and \Cref{fig:L4adjacencygraph} respectively.
 
-\subsection{Exact Diagonalization Benchmark}
+\subsection{\label{sec:exact_benchmark}Exact Diagonalization Benchmark}
 
 To be used as benchmark, we fully diagonalize the biggest block of the PXP Hamiltonian by using the dense matrix version of the Hamiltonian. Different blocks of the Hamiltonian can be accessed by using \texttt{networkx.connected\_components} after forming the adjacency matrix. The biggest block of the Hamiltonian is then accessed by taking the list which has the longest length in a list of lists we get from \texttt{networkx.connected\_components}. The exact diagonalization is then carried out by \texttt{scipy.linalg.eigh} after converting the sparse matrix to array. The result is then stored to be used as benchmark. The full dense spectrum for $L = 16$ case can be seen in \Cref{fig:fulldense}.
 
@@ -234,10 +234,12 @@ H_k=V_k^\dagger H_{\mathrm{biggest}}V_k.
 \end{equation}
 This way, we can diagonalize each $H_k$ independently, which considerably reduces the dimensions of the matrices involved in the process. However, this straightforward way of finding the momentum sector basis becomes the bottleneck when we are trying to scale up to larger system sizes $L$. 
 
+After dividing the biggest block to its translationally invariant momentum sectors, all sectors were exactly diagonalized separately and the found eigenvalues were compared against the benchmark spectrum found in \Cref{sec:exact_benchmark} and plotted in \Cref{fig:fulldense}. The found eigenvalues were also plotted with the eigenspectrum in \Cref{fig:fulldense} and they reproduce the benchmark spectrum. This shows the momentum sector construction correctly divides the biggest block into its momentum sectors.
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=\linewidth]{figures/task2_vs_task3.png}
-    \caption{Comparison of the biggest block exact diagonalization and the momentum sectors.}
+    \caption{Comparison of the biggest block exact diagonalization and the momentum sectors in a system size $L = 16$.}
     \label{fig:task2_vs_task3}
 \end{figure}
 
@@ -273,12 +275,12 @@ and the von Neumann entanglement entropy is
 \end{equation}
 In the numerical implementation, this can be directly computed by reshaping the eigenvector into a $2^{L/2} \times 2^{L/2}$ matrix, performing a singular value decomposition, and summing over the squared singular values. However, because of the floating point arithmetic, Schmidt values can get absurdly low, causing \texttt{numpy} to interpret them as zero inside the logarithm. Therefore a tolerance of $s_\alpha>10^{-15}$ should be taken.
 
-Since the Hamiltonian is diagonalized in the blockade constrained Hilbert space, the eigenvectors first have to be embedded back into the full computational basis before reshaping to compute their entropies correctly.
+Since the Hamiltonian is diagonalized in the blockade constrained Hilbert space, the eigenvectors first have to be embedded back into the full computational basis before reshaping to compute their entropies correctly. After this, the entanglement entropy was plotted against their eigenvalues and the corresponding entropy profile can be seen in \Cref{fig:task4_entropies}. Scar states are the eigenpairs that have the lowest entropies across the entire spectrum. 
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=\linewidth]{figures/task4_entropies.png}
-    \caption{Entanglement entropies of the eigenstates against their eigenvalues.}
+    \caption{Entanglement entropies of the eigenstates against their eigenvalues with a system size $L = 16$.}
     \label{fig:task4_entropies}
 \end{figure}
 
@@ -291,57 +293,107 @@ which would project onto eigenstates with energy $E$, so we would be able to tar
 
 Chebyshev polynomials are defined by
 \begin{equation}
-    T_n(x)=\cos(n\arccos x),
+T_n(x)=\cos(n\arccos x),
 \end{equation}
 with the inner product
 \begin{equation}
-    \int_{-1}^1dx\,T_m(x)T_n(x)/\sqrt{1-x^2} = \delta_{nm},
+\int_{-1}^1dx,T_m(x)T_n(x)/\sqrt{1-x^2} = \delta_{nm},
 \end{equation}
 and satisfy the recursion relation
 \begin{equation}
-    T_{n+1}(x)=2xT_n(x)-T_{n-1}(x).
+T_{n+1}(x)=2xT_n(x)-T_{n-1}(x).
 \end{equation}
 Chebyshev polynomials are used because they are the optimal way to do polynomial filtering for Hermitian matrices, and their recurrence relation gives us a convenient way to calculate the current vector product with using the old vector products \cite{luitz2026physics767}.
 
-After the recursive function for finding the $p(A)\vec{x}$ is defined, where $A$ is a matrix, $p(A)$ is the polynomial filter, and $\vec{x}$ is a vector, the corresponding $(\mathrm{Matrix}\,\times\,\mathrm{Vector})$ method is turned into a linear operator using \texttt{scipy.sparse.linalg.aslinearoperator}. Since the scar states of the system is not known beforehand, the system is sweeped across the eigenspectrum with target values $E_\mathrm{target}=-L-1, -L,\dots,L,L+1$ to boost the corresponding eigenvalues and suppress the rest, and for every target $20$ eigenpairs were calculated using the method. There is freedom in choosing the target eigenvalue interval and the number of eigenpairs, and the chosen interval may or may not be optimal depending on system size. With this method, rather than looking at the whole eigenspectrum, which can have thousands of eigenpairs, we just look at $20$ eigenpairs close to the current target energy eigenvalue.
+Before using the Chebyshev recursion, we need to rescale to the eigenspectrum to the interval $[-1,1]$, since the Chebyshev polynomials are defined on this interval. In the code, this is done using an estimate of the largest absolute eigenvalue $\lambda_{\max}$.
+
+
+After the recursive function for finding the $p(A)\vec{x}$ is defined, where $A$ is a matrix, $p(A)$ is the polynomial filter, and $\vec{x}$ is a vector, the corresponding $(\mathrm{Matrix}\times\mathrm{Vector})$ method is turned into a linear operator using \texttt{scipy.sparse.linalg.aslinearoperator}. Since the scar states of the system is not known beforehand, the system is sweeped across the eigenspectrum with target values $E_\mathrm{target}=-L-1, -L,\dots,L,L+1$ to boost the corresponding eigenvalues and suppress the rest, and for every target $20$ eigenpairs were calculated using the method.
+
+There is freedom in choosing the target eigenvalue interval and the number of eigenpairs, and the chosen interval may or may not be optimal depending on system size. With this method, rather than looking at the whole eigenspectrum, which can have thousands of eigenpairs, we just look at $20$ eigenpairs close to the current target energy eigenvalue. 
+
+The found eigenvalues were then compared against the $k = 0$ momentum sector exact diagonalization eigenvalues, which can be seen in \Cref{fig:task3_k0_task5_eigenvalue_comparison}. Furthermore, the found entanglement entropies of the eigenvectors were compared against $k = 0$ momentum sector exact diagonalization entanglement entropies, which can be seen in \Cref{fig:task4_task5_entropy_comparison_order_20}. Both the eigenvalues and entropies on the target eigenvalue $E_\mathrm{target} = 0$ are somewhat problematic because there are many eigenvalues close to this exact target so the polynomial filtering has a hard time distinguishing between them. The Chebyshev filtering works as expected away from this highly degenerate region.
 
 \begin{figure}[h]
-    \centering
-    \includegraphics[width=\linewidth]{figures/task5_L20.png}
-    \caption{Entropies of the Chebyshev-targeted eigenstates.}
-    \label{fig:task5_L20}
+\centering
+\includegraphics[width=\linewidth]{figures/task3_k0_task5_eigenvalue_comparison.pdf}
+\caption{Comparison of exact $n_k=0$ eigenvalues and Chebyshev-targeted eigenvalues at $L = 16$.}
+\label{fig:task3_k0_task5_eigenvalue_comparison}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{figures/task4_task5_entropy_comparison_order_20.pdf}
+\caption{Comparison of the exact diagonalization entropies and the Chebyshev filter entropies at $L = 16$.}
+\label{fig:task4_task5_entropy_comparison_order_20}
 \end{figure}
 
 Since this method amplifies target energies as
 \begin{equation}
-    E_\mathrm{target} \longrightarrow p(E_\mathrm{target}), 
+E_\mathrm{target} \longrightarrow p(E_\mathrm{target}),
 \end{equation}
 we need to find the actual energies once more for the entropy plot. Since the Chebyshev eigenvectors are still the same as the actual eigenvectors, i.e. we have
 \begin{equation}
-    \begin{aligned}
-        H\ket{v} &= E\ket{v}, \\
-        p(H)\ket{v} &= p(E)\ket{v},
-    \end{aligned} 
+\begin{aligned}
+H\ket{v} &= E\ket{v}, \\
+p(H)\ket{v} &= p(E)\ket{v},
+\end{aligned}
 \end{equation}
 we can still use these eigenvectors to find their corresponding eigenvalues by
 \begin{equation}
-    \bra{v}H\ket{v} = E.
+\bra{v}H\ket{v} = E.
 \end{equation}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=\linewidth]{figures/task3_k0_task5_eigenvalue_comparison.pdf}
-    \caption{Comparison of exact $n_k=0$ eigenvalues and Chebyshev-targeted eigenvalues.}
-    \label{fig:task3_k0_task5_eigenvalue_comparison}
-\end{figure}
+The largest system size reached was $L = 20$ with this method with a $9\mathrm{th}$ gen Intel Core $\mathrm{i}5$ CPU. The acquired entropy profile can be seen in \Cref{fig:task5_L20}. At this system size, exact diagonalization of $k = 0$ momentum sector is still also feasible, and might even be better because \texttt{np.linalg.eigh} uses highly optimized linear algebra libraries. However, this method would be expected to perform better with larger system sizes since it does not need to resolve every single eigenvector in the spectrum.
 
 \begin{figure}[h]
-    \centering
-    \includegraphics[width=\linewidth]{figures/task4_task5_entropy_comparison_order_20.pdf}
-    \caption{Comparison of the exact diagonalization entropies and the Chebyshev filter entropies.}
-    \label{fig:task4_task5_entropy_comparison_order_20}
+\centering
+\includegraphics[width=\linewidth]{figures/task5_L20.png}
+\caption{Entropies of the Chebyshev-targeted eigenstates at $L = 20$.}
+\label{fig:task5_L20}
 \end{figure}
 
+Furthermore, the real bottleneck of this method seems to be the initialization of the basis states. In the present method, the full basis of the PXP Hamiltonian is initialized first, and then the biggest block of the Hamiltonian is obtained using \texttt{networkx}. After that, the $k = 0$ momentum block of the biggest block Hamiltonian was found using membership tests. So the present basis states initialization procedure follows as
+\begin{equation}
+    H \rightarrow H_{\mathrm{biggest}} \rightarrow (H_{\mathrm{biggest}})_{k=0}.
+\end{equation}
+Especially the initialization of the full basis states of the PXP Hamiltonian is computationally very costly, so if we could find the basis state of $H_{\mathrm{biggest}}$ or $(H_{\mathrm{biggest}})_{k=0}$ directly without touching the full basis states we would be in a better shape. Doing this would require a more complex algorithm. The PXP Hamiltonian also has a chiral symmetry as explained in the reference \cite{Turner_2018}, so the eigenvalues actually come in pairs as $(-E, E)$ so that finding half of the scar states is actually enough to find all of the scar states.
+
+\section{Discussion \MakeLowercase{and} Conclusion}
+
+We expect the local observables of a generic quantum system to thermalize into their expected values from statistical mechanics. However, there are particular systems such as PXP Hamiltonian that violate this expectation with some special states called the scar states which are characterized by their unusually low entanglement entropy despite lying in the middle of the spectrum. 
+
+Scar states live inside the whole energy spectrum and there are not many of them, which makes finding them a numerically interesting problem. As with any state finding problem, the problem grows exponentially with system size thus we first restrict the basis to a physically relevant basis called the biggest block which grows with $\phi^L$ where $\phi$ is the golden ratio. We then fully exact diagonalize this Hamiltonian block for the system size $L = 16$ and get our baseline benchmark. Benchmarking is important for us to ensure that what we are doing is correct numerically. 
+
+We then restrict this basis once more using the translational invariance of the periodic boundary conditions. We then fully exact diagonalize all the momentum sectors independently and compare the eigenspectrum with our baseline benchmark eigenspectrum. After this, we restrict the basis once more to $k = 0$ momentum sector basis and only then we calculate the entropy profile. With system size $L = 16$, we effectively reduce the dimension of the Hilbert space as
+\begin{equation}
+\begin{aligned}
+\dim H &= 2^{16} = 65536,\\
+\dim H_{\mathrm{biggest}} &= 2207,\\
+\dim \left(H_{\mathrm{biggest}}\right)_{k=0} &= 143.
+\end{aligned}
+\end{equation}
+
+After we have the entropy structure for $k = 0$ momentum sector, we turn to polynomial filtering using Chebyshev polynomials to further scale up our search for scar states. With polynomial filtering, we can amplify the eigenvalue of a certain eigenstate and the states close to that target eigenstate while suppressing the eigenvalues of the states away from the target eigenstate. This way, we can restrict the number of eigenpairs we find to the energy window around the target value, instead of finding the whole spectrum.
+
+The largest system size reached with Chebyshev polynomial filtering was $L = 20$. At this system size, the full exact diagonalization is still a viable method, but polynomial filtering is expected to be a better method for larger system sizes since it does not involve sweeping the whole spectrum. A rough estimate can be done asymptotically, if the momentum sector decomposition divides the biggest block basis into $L$ equal sectors, we have the scaling of $\mathrm{O}(\phi^L/L)$, while the Chebyshev filtering looks for a fixed number $N$ of eigenpairs around $2L + 3$ targeted eigenstates total, which gives the scale of
+\begin{equation}
+    N(2L+3) \sim \mathrm{O}(L).
+\end{equation}
+This means the Chebyshev polynomial filtering becomes useful when the full $k=0$ sector itself becomes too large to diagonalize fully.
+
+However, the present implementation of Chebyshev polynomial filtering suffers from the initialization of the basis states, since it follows the route
+\begin{equation}
+    H \rightarrow H_{\mathrm{biggest}} \rightarrow (H_{\mathrm{biggest}})_{k=0}.
+\end{equation}
+This could be avoided by directly obtaining the basis states of $H_{\mathrm{biggest}}$ or $(H_{\mathrm{biggest}})_{k=0}$, though it would require a more complex algorithm. The chirality of the PXP Hamiltonian can be further used to only sweep one side of the spectrum.
+
+Further interesting work could involve looking at the time evolution of the \textit{N\'eel type} states, where we would expect the scar states to reveal themselves through many-body revivals. Another useful work for this implementation would be to construct the blockade constrained momentum basis directly, which would remove the main initialization bottleneck of the Chebyshev polynomial filtering method.
+
+In conclusion, the benchmark comparisons show us that the momentum sector construction and the Chebyshev filtering reproduces the expected eigenspectrum and entanglement structure.
+
+
+\clearpage
 
 \appendix
 
