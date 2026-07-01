@@ -303,12 +303,37 @@ and satisfy the recursion relation
 \begin{equation}
 T_{n+1}(x)=2xT_n(x)-T_{n-1}(x).
 \end{equation}
-Chebyshev polynomials are used because they are the optimal way to do polynomial filtering for Hermitian matrices, and their recurrence relation gives us a convenient way to calculate the current vector product with using the old vector products \cite{luitz2026physics767}.
+Chebyshev polynomials are used because they are the optimal way to do polynomial filtering for Hermitian matrices, and their recurrence relation gives us a convenient way to calculate the current vector product with using the old vector products \cite{luitz2026physics767}. Before using the Chebyshev recursion, we need to rescale to the eigenspectrum to the interval $[-1,1]$, since the Chebyshev polynomials are defined on this interval. In the code, this is done using an estimate of the largest absolute eigenvalue $\lambda_{\max}$.
 
-Before using the Chebyshev recursion, we need to rescale to the eigenspectrum to the interval $[-1,1]$, since the Chebyshev polynomials are defined on this interval. In the code, this is done using an estimate of the largest absolute eigenvalue $\lambda_{\max}$.
+Following the polynomial filtering construction from the lecture notes \cite{luitz2026physics767}, we can define the Chebyshev polynomial filter
+\begin{equation}
+    p_k(H) = \sum_{m=0}^{k} c_m T_m\left(1 + \frac{H - \lambda_{\max}}{\lambda_{\max}}\right).
+\end{equation}
+We have the coefficients $c_m$ for $E_\mathrm{target}=0$
+\begin{equation}
+    c_m = \sqrt{4-3\delta_{m0}} \cos\left(\frac{m\pi}{2}\right).
+\end{equation}
+Since $\arccos(0)=\pi/2$, this can be written as
+\begin{equation}
+    c_m = (2-\delta_{m0}) \cos\left(m\arccos 0\right).
+\end{equation}
+For a general target energy $E_\mathrm{target}$, we replace the zero target with the general target value
+\begin{equation}
+    x_0=\frac{E_\mathrm{target}}{\lambda_{\max}}.
+\end{equation}
+This gives the target-dependent coefficients
+\begin{equation}
+    c_m = (2-\delta_{m0}) \cos\left[m\arccos\left(\frac{E_\mathrm{target}}{\lambda_{\max}}\right)\right].
+\end{equation}
+Therefore, we can implement the targeted Chebyshev polynomial filtering as
+\begin{widetext}
+\begin{equation}
+    p_k(H) = \sum_{m=0}^{k} (2-\delta_{m0}) \cos\left[m\arccos\left(\frac{E_\mathrm{target}}{\lambda_{\max}}\right)\right]T_m\left(1 + \frac{H - \lambda_{\max}}{\lambda_{\max}}\right).
+\end{equation}
+\end{widetext}
 
-
-After the recursive function for finding the $p(A)\vec{x}$ is defined, where $A$ is a matrix, $p(A)$ is the polynomial filter, and $\vec{x}$ is a vector, the corresponding $(\mathrm{Matrix}\times\mathrm{Vector})$ method is turned into a linear operator using \texttt{scipy.sparse.linalg.aslinearoperator}. Since the scar states of the system is not known beforehand, the system is sweeped across the eigenspectrum with target values $E_\mathrm{target}=-L-1, -L,\dots,L,L+1$ to boost the corresponding eigenvalues and suppress the rest, and for every target $20$ eigenpairs were calculated using the method.
+After the recursive function for finding the 
+$p(A)\vec{x}$ is defined, where $A$ is a matrix, $p(A)$ is the polynomial filter, and $\vec{x}$ is a vector, the corresponding $(\mathrm{Matrix}\times\mathrm{Vector})$ method is turned into a linear operator using \texttt{scipy.sparse.linalg.aslinearoperator}. Since the scar states of the system is not known beforehand, the system is sweeped across the eigenspectrum with target values $E_\mathrm{target}=-L-1, -L,\dots,L,L+1$ to boost the corresponding eigenvalues and suppress the rest, and for every target $20$ eigenpairs were calculated using the method.
 
 There is freedom in choosing the target eigenvalue interval and the number of eigenpairs, and the chosen interval may or may not be optimal depending on system size. With this method, rather than looking at the whole eigenspectrum, which can have thousands of eigenpairs, we just look at $20$ eigenpairs close to the current target energy eigenvalue. 
 

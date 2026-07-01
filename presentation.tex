@@ -32,7 +32,10 @@
     \begin{itemize}
         \item Explains thermalization in isolated quantum many-body systems.
         \item Local observables relax to match expected values from statistical mechanics.
-        \item Individual generic eigenstates mimic thermal ensembles.
+        \item Individual generic eigenstates mimic thermal ensembles:
+        \begin{equation}
+            \braket{E_n|\hat{O}|E_n}\approx \langle \hat{O}\rangle_{\mathrm{thermal}}.
+        \end{equation}
     \end{itemize}
     \vfill
     \begin{block}{Important: ETH Violations}
@@ -251,7 +254,7 @@ For periodic boundary conditions, the first and last sites are also constrained:
             \begin{itemize}
                 \item Thermal states have high entropies. Their high entanglement results in loss of local information.
                 \item Scar states have unusually low entropies.
-                \item Out of $143$ total number of eigenstates in $k = 0$, only $8$ of them are scar(ce) states.
+                \item Out of $143$ total number of eigenstates in $k = 0$, only $8$ of them are scar states.
                 \item The scar state energies span the entire energy range!
             \end{itemize}
         \end{column}
@@ -294,6 +297,107 @@ For periodic boundary conditions, the first and last sites are also constrained:
     \end{columns}
 \end{frame}
 
+\begin{frame}{Implementation of Chebyshev Polynomial Filtering}
+    \begin{columns}[T]
+        \begin{column}{0.44\textwidth}
+            \begin{itemize}
+                \item To be able to reach larger system sizes, we keep everything sparse, and define the recursive method
+                \begin{equation*}
+                    p_k(H) \vec{x}= \sum_{m=0}^{k} c_m T_m\left(1 + \frac{H - \lambda_{\max}}{\lambda_{\max}}\right)\vec{x}.
+                \end{equation*}
+                \item We sweep over 
+                \begin{equation*}
+                    E_\mathrm{target} = -(L+1),\dots,L+1.
+                \end{equation*}
+                \item Find $20$ eigenpairs around each $E_\mathrm{target}$ with a sparse eigensolver.
+            \end{itemize}
+        \end{column}
 
+        \begin{column}{0.54\textwidth}
+        \vspace{-0.58cm}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.93\textwidth]{figures/task3_k0_task5_eigenvalue_comparison.pdf}
+            \end{figure}
+        \end{column}
+    \end{columns}    
+\end{frame}
+
+\begin{frame}{Limitations of the Implementation}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.93\linewidth]{figures/task4_task5_entropy_comparison_order_20.pdf}
+                \caption{Chebyshev filtering vs exact diagonalization with order $k = 20$.}
+            \end{figure}
+        \end{column}
+
+        \begin{column}{0.48\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.93\textwidth]{figures/task4_task5_entropy_comparison_order_400.pdf}
+                \caption{Chebyshev filtering vs exact diagonalization with order $k = 400$.}
+            \end{figure}
+        \end{column}
+    \end{columns}    
+\end{frame}
+
+\begin{frame}{Largest system size reached with Chebyshev filtering}
+    \begin{columns}[T]
+        \begin{column}{0.44\textwidth}
+            \begin{itemize}
+                \item Largest system size achieved was $L = 20$.
+                \item Full ED is still reliable at $L = 20$ for $k = 0$ momentum sector.
+                \item For even larger $L$, Chebyshev filtering is expected to be better.
+                \item Real bottleneck of this implementation is the basis states initialization 
+                \begin{equation*}
+                    H \rightarrow H_{\mathrm{biggest}} \rightarrow (H_{\mathrm{biggest}})_{k=0}.
+                \end{equation*}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.54\textwidth}
+        \vspace{-0.58cm}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.93\textwidth]{figures/task5_L20.png}
+            \end{figure}
+        \end{column}
+    \end{columns}    
+\end{frame}
+
+\begin{frame}{Summary and Future Outlook}
+    \begin{itemize}
+        \item The PXP Hamiltonian contains rare ETH-violating scar states with unusually low entanglement.
+        \item Translation symmetry reduces the problem to independent momentum sectors, we focus on $k = 0$ block for finding scar states.
+        \item Chebyshev polynomial filtering can target eigenstates near chosen energies without diagonalizing the full spectrum.
+        \item The method reproduces the benchmark eigenspectrum and entropy profile, but the current bottleneck is still basis initialization.
+        \item Future work: construct the blockade-constrained $k=0$ basis directly and study time evolution of \textit{N\'eel type} states.
+    \end{itemize}
+\end{frame}
+
+\appendix
+
+\section{backup}
+
+\begin{frame}[noframenumbering]{Chebyshev polynomial filtering implementation}
+    Following the lecture notes, we use the filter
+    \begin{equation}
+        p_k(H)=\sum_{m=0}^{k} c_m T_m\left(1 + \frac{H - \lambda_{\max}}{\lambda_{\max}}\right),
+    \end{equation}
+    where the lecture note coefficients target $E_\mathrm{target}=0$:
+    \begin{equation}
+        c_m=\sqrt{4-3\delta_{m0}}\cos\left(\frac{m\pi}{2}\right).
+    \end{equation}
+    Since $\arccos(0)=\pi/2$, we generalize this to a target energy $E_\mathrm{target}$ by replacing
+    \begin{equation}
+        0 \rightarrow \frac{E_\mathrm{target}}{\lambda_{\max}}.
+    \end{equation}
+    Therefore,
+    \begin{equation}
+        c_m=(2-\delta_{m0}) \cos\left[m\arccos\left(\frac{E_\mathrm{target}}{\lambda_{\max}}\right)\right].
+    \end{equation}
+\end{frame}
 
 \end{document}
